@@ -16,11 +16,13 @@ struct FragmentOutput {
     @location(0) color: vec4f,
 }
 
+@group(0) @binding(0) var<uniform> translation: vec2f;
+
 @vertex
 fn vertex(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
 
-    output.position = vec4(input.position, 0, 1);
+    output.position = vec4(input.position + translation, 0, 1);
     output.color = input.color;
 
     return output;

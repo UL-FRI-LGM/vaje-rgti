@@ -312,3 +312,117 @@ V opisanem primeru gre za nepotrebno optimizacijo, saj je količina podatkov zel
 majhna. Praktični 3D modeli pa posamezno oglišče lahko uporabijo tudi v 6 ali
 več trikotnikih, zato je taka optimizacija kritičnega pomena. Vsi modeli, ki jih
 bomo uporabljali na vajah, bodo indeksirani.
+
+# Animacija
+
+Če želimo kvadrat programsko animirati, moramo najti način za prenos podatkov o
+njegovi transformaciji v senčilnik. Podatki o transformaciji so skupni vsem
+ogliščem in vsem fragmentom, zato v senčilniku delujejo podobno kot konstante.
+Imenujemo jih **uniforme**. V nasprotju s pravimi konstantami lahko uniforme med
+zaporednimi klici izrisa spreminjamo in s tem ustvarimo animacijo.
+
+Uniforme in drugi zunanji viri so organizirani v **skupine**, znotraj skupine pa
+ima vsak vir svojo **številko vezave**. Vse vire v posamezni skupini v senčilnik
+povežemo z enim samim funkcijskim klicem.
+
+### Senčilnik
+
+Denimo, da želimo kvadratu dodati translacijo, ki jo predstavimo z 2D vektorjem.
+Najprej jo dodamo v senčilnik oglišč:
+
+```rust
+@group(0) @binding(0) var<uniform> translation: vec2f;
+```
+
+Translacijo prištejemo položaju oglišča:
+
+```rust
+output.position = vec4(input.position + translation, 0, 1);
+```
+
+Translacijo smo v zgornji kodi dodelili skupini 0 in ji določili številko vezave
+0. Te številke bodo pomembne pri ustvarjanju skupine vezav.
+
+### Medpomnilnik
+
+Vrednosti uniform senčilnik pridobi iz medpomnilnika. Ustvarimo medpomnilnik, ki
+naj bo vsaj tako velik, da lahko hrani dve števili s plavajočo vejico:
+
+```js
+const translationBuffer = device.createBuffer({
+    size: 8,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+});
+```
+
+Pri tem smo napravi sporočili, da bo medpomnilnik uporabljen kot uniforma.
+
+### Skupina vezav
+
+Za vezavo medpomnilnika v senčilnik moramo ustvariti še skupino vezav:
+
+```js
+const bindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+        { binding: 0, resource: { buffer: translationBuffer } },
+    ]
+});
+```
+
+Razpored uniform v posamezni skupini in njihove tipe določa **razpored skupine**
+(bind group layout), razpored vseh skupin v celotnem cevovodu pa določa
+**razpored cevovoda**. Stvarjenje slednjega smo v prvi vaji prepustili gonilniku
+(`layout: 'auto'`), tako da lahko razpored skupine pridobimo kar prek funkcije
+`pipeline.getBindGroupLayout`, ki ji podamo številko skupine. Tako ustvarjena
+skupina vezav bo posledično veljavna le v tem cevovodu.
+
+Nazadnje v obhodu upodabljanja skupino povežemo s senčilnikom:
+
+```js
+renderPass.setBindGroup(0, bindGroup);
+```
+
+### Animacija
+
+Do tega trenutka je naša aplikacija izris izvedla le enkrat, za animacijo pa bo
+treba napisati zanko, ki bo najprej posodobila transformacijo kvadrata, nato pa
+izrisala posodobljeno sceno. Potrebujemo torej dve funkciji, `update` za
+posodabljanje in `render` za izris, ki ju bomo klicali večkrat (običajno
+60-krat) na sekundo:
+
+```js
+function update() {
+    // user input, animations, AI ...
+}
+
+function render() {
+    // clear the canvas, render
+}
+
+function frame() {
+    update();
+    render();
+    requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+```
+
+Za implementacijo zanke smo uporabili v brskalnik vgrajeno funkcijo
+`requestAnimationFrame`, ki podano funkcijo (`frame`) izvede pred naslednjim
+osveževanjem zaslona.
+
+Če želimo, da se kvadrat premika po krožnici, lahko animacijo napišemo tako:
+
+```js
+function update() {
+    const time = performance.now() / 1000;
+    const radius = 0.5;
+    const frequency = 0.5;
+    const x = radius * Math.cos(frequency * time * 2 * Math.PI);
+    const y = radius * Math.sin(frequency * time * 2 * Math.PI);
+
+    device.queue.writeBuffer(translationBuffer, 0, new Float32Array([x, y]));
+}
+```

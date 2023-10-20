@@ -72,19 +72,55 @@ const pipeline = device.createRenderPipeline({
     layout: 'auto',
 });
 
-// Render a square
-const commandEncoder = device.createCommandEncoder();
-const renderPass = commandEncoder.beginRenderPass({
-    colorAttachments: [{
-        view: context.getCurrentTexture().createView(),
-        loadOp: 'clear',
-        clearValue: [0.7, 0.8, 0.9, 1],
-        storeOp: 'store',
-    }]
+// Create translation buffer
+const translationBuffer = device.createBuffer({
+    size: 8,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
-renderPass.setPipeline(pipeline);
-renderPass.setVertexBuffer(0, vertexBuffer);
-renderPass.setIndexBuffer(indexBuffer, 'uint32');
-renderPass.drawIndexed(indices.length);
-renderPass.end();
-device.queue.submit([commandEncoder.finish()]);
+
+// Create the bind group
+const bindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+        { binding: 0, resource: { buffer: translationBuffer } },
+    ]
+});
+
+function update() {
+    // Animate the square
+    const time = performance.now() / 1000;
+    const radius = 0.5;
+    const frequency = 0.5;
+    const x = radius * Math.cos(frequency * time * 2 * Math.PI);
+    const y = radius * Math.sin(frequency * time * 2 * Math.PI);
+
+    device.queue.writeBuffer(translationBuffer, 0, new Float32Array([x, y]));
+}
+
+function render() {
+    // Render the square
+    const commandEncoder = device.createCommandEncoder();
+    const renderPass = commandEncoder.beginRenderPass({
+        colorAttachments: [{
+            view: context.getCurrentTexture().createView(),
+            loadOp: 'clear',
+            clearValue: [0.7, 0.8, 0.9, 1],
+            storeOp: 'store',
+        }]
+    });
+    renderPass.setPipeline(pipeline);
+    renderPass.setVertexBuffer(0, vertexBuffer);
+    renderPass.setIndexBuffer(indexBuffer, 'uint32');
+    renderPass.setBindGroup(0, bindGroup);
+    renderPass.drawIndexed(indices.length);
+    renderPass.end();
+    device.queue.submit([commandEncoder.finish()]);
+}
+
+function frame() {
+    update();
+    render();
+    requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
