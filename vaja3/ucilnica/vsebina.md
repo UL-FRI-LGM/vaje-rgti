@@ -65,15 +65,12 @@ Senčilnik posodobimo tako, da bo atribut `position` odražal zgornje spremembe:
 @location(0) position: vec4f,
 ```
 
-V glavni funkciji za zdaj položaj le zapišimo v izhodno spremenljivko
-`position`:
+V glavni funkciji položaju ni več treba dodati dveh fiksnih komponent, saj jih
+v senčilnik prinesemo že z atributom:
 
 ```rust
-output.position = input.position;
+output.position = matrix * input.position;
 ```
-
-Uniformo `translation` lahko izbrišemo, ker jo bomo v nadaljevanju nadomestili
-s transformacijsko matriko.
 
 Senčilnik in podatki so zdaj pripravljeni za delo v treh dimenzijah.
 
@@ -116,7 +113,10 @@ import { mat4 } from './gl-matrix-module.js';
 Potrebujemo tri matrike: transformacijsko matriko modela, ki model iz lokalnega
 prostora postavi v globalni prostor, transformacijsko matriko pogleda, ki model
 iz globalnega prostora postavi v glediščni prostor, in projekcijsko matriko,
-ki model iz glediščnega prostora postavi v normaliziran prostor zaslona.
+ki model iz glediščnega prostora postavi v rezalni prostor. Grafična kartica bo
+po rezanju izvedla še perspektivno deljenje, rezultat katerega bodo točke v
+normaliziranem prostoru zaslona. Temu sledita le še zaslonska preslikava in
+rasterizacija.
 
 Glede koordinatnih sistemov bomo sledili zgledu, ki ga postavljajo vsi večji
 grafični pogoni: koordinatni sistemi bodo desnosučni, pogled kamere je usmerjen
@@ -160,35 +160,6 @@ zaporedne slike animacije.
 
 ### Prenos transformacije v senčilnik
 
-V senčilnik dodamo uniformo za transformacijsko matriko:
-
-```rust
-@group(0) @binding(0) var<uniform> matrix: mat4x4f;
-```
-
-V glavni funkciji jo pomnožimo s položajem oglišča:
-
-```rust
-output.position = matrix * input.position;
-```
-
-Za prenos matrike lahko recikliramo medpomnilnik in skupino vezav iz prejšnje
-vaje:
-
-```js
-const matrixBuffer = device.createBuffer({
-    size: 16 * 4,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-});
-
-const bindGroup = device.createBindGroup({
-    layout: device.getBindGroupLayout(0),
-    entries: [
-        { binding: 0, resource: { buffer: matrixBuffer } },
-    ]
-})
-```
-
 Senčilnik sprejema le eno matriko, ki predstavlja združeno transformacijo
 modela, pogleda in projekcije. V funkciji `render` jih zmnožimo in pri tem
 pazimo na vrstni red množenja:
@@ -203,7 +174,7 @@ mat4.multiply(matrix, projectionMatrix, matrix);
 Rezultat zapišemo v medpomnilnik:
 
 ```js
-device.queue.writeBuffer(matrixBuffer, 0, matrix);
+device.queue.writeBuffer(uniformBuffer, 0, matrix);
 ```
 
 Na platnu bi morala biti vidna vrteča se kocka.
@@ -246,3 +217,285 @@ depthStencilAttachment: {
 ```
 
 S tem bi moralo nepravilno prekrivanje ploskev izginiti.
+
+# Komponentni sistem
+
+Trenutno je v datoteki `main.js` združeno veliko funkcionalnosti, ki bi jo bilo
+bolje ločiti na več delov, ki jih bomo lahko ponovno uporabili. Refaktorizacijo
+bomo pričeli pri transformacijah. Ustvarili bomo dva razreda, `Transform` in
+`Camera`, ki bosta zadolžena za ustvarjanje transformacijskih matrik preko
+intuitivnih parametrov. Nato bomo ustvarili še razred `Node`, ki bo predstavljal
+posamezno vozlišče v grafu scene in vseboval seznam pripetih komponent.
+
+### Komponenti Transform in Camera
+
+Začnimo z razredom `Transform`, ki ga zapišimo v datoteko `Transform.js`:
+
+```js
+import { mat4 } from './gl-matrix-module.js';
+
+export class Transform {
+
+    constructor({
+        rotation = [0, 0, 0, 1],
+        translation = [0, 0, 0],
+        scale = [1, 1, 1],
+    } = {}) {
+        this.rotation = rotation;
+        this.translation = translation;
+        this.scale = scale;
+    }
+
+    get matrix() {
+        return mat4.fromRotationTranslationScale(mat4.create(),
+            this.rotation, this.translation, this.scale);
+    }
+
+}
+```
+
+Razred je napisan tako, da ga lahko enostavno instanciramo in pri tem opcijsko
+dodamo parametre vrtenja, premika in raztega. Vrtenje je, kot v večini sodobnih
+grafičnih pogonov, predstavljeno s kvaternionom.
+
+Dodajmo še razred `Camera` za predstavitev perspektivne kamere in ga zapišimo
+v datoteko `Camera.js`:
+
+```js
+import { mat4 } from './gl-matrix-module.js';
+
+export class Camera {
+
+    constructor({
+        aspect = 1,
+        fovy = 1,
+        near = 0.01,
+        far = 1000,
+    } = {}) {
+        this.aspect = aspect;
+        this.fovy = fovy;
+        this.near = near;
+        this.far = far;
+    }
+
+    get matrix() {
+        const { fovy, aspect, near, far } = this;
+        return mat4.perspectiveZO(mat4.create(), fovy, aspect, near, far);
+    }
+
+}
+```
+
+### Graf scene
+
+Ustvarjeni komponenti bomo pripeli na objekte v sceni, ki jih bomo predstavili
+z grafom. Bolj natančno, ustvarili bomo razred `Node`, ki bo predstavljal
+objekte v grafu scene. Vsak objekt ima lahko več otrok in kvečjemu enega starša.
+
+Razred `Node` zapišimo v datoteko `Node.js`.
+
+```js
+export class Node {
+
+    constructor() {
+        this.parent = null;
+        this.children = [];
+        this.components = [];
+    }
+
+    addChild(node) {
+        node.parent?.removeChild(node);
+        node.parent = this;
+        this.children.push(node);
+    }
+
+    removeChild(node) {
+        const index = this.children.indexOf(node);
+        if (index >= 0) {
+            this.children.splice(index, 1);
+            node.parent = null;
+        }
+    }
+
+    traverse(before, after) {
+        before?.(this);
+        for (const child of this.children) {
+            child.traverse(before, after);
+        }
+        after?.(this);
+    }
+
+    linearize() {
+        const array = [];
+        this.traverse(node => array.push(node));
+        return array;
+    }
+
+    filter(predicate) {
+        return this.linearize().filter(predicate);
+    }
+
+    find(predicate) {
+        return this.linearize().find(predicate);
+    }
+
+    map(transform) {
+        return this.linearize().map(transform);
+    }
+
+    addComponent(component) {
+        this.components.push(component);
+    }
+
+    removeComponent(component) {
+        this.components = this.components.filter(c => c !== component);
+    }
+
+    removeComponentsOfType(type) {
+        this.components = this.components.filter(component => !(components instanceof type));
+    }
+
+    getComponentOfType(type) {
+        return this.components.find(component => component instanceof type);
+    }
+
+    getComponentsOfType(type) {
+        return this.components.filter(component => component instanceof type);
+    }
+
+}
+```
+
+Razred `Node` vsebuje osnovne metode za delo z grafom scene in za upravljanje s
+komponentami.
+
+Če želimo v sceno dodati objekt z določeno transformacijo, lahko to zdaj
+enostavno storimo z uporabo zgornjih razredov:
+
+```js
+const object = new Node();
+object.addComponent(new Transform({
+    translation: [1, 2, 3]
+}));
+
+const scene = new Node();
+scene.addChild(object);
+```
+
+Ker lahko na posamezen objekt dodamo poljubno količino komponent (vključujoč
+transformacije), je pridobivanje transformacijskih matrik nekoliko bolj težavno.
+Poleg tega moramo upoštevati še celoten graf scene in s tem povezano združevanje
+transformacijskih matrik. Za enostavnejše delo s transformacijami ustvarimo še
+datoteko `SceneUtils.js`, kamor bomo zapisali funkcije za združevanje matrik:
+
+```js
+import { mat4 } from './gl-matrix-module.js';
+
+import { Transform } from './Transform.js';
+import { Camera } from './Camera.js';
+
+export function getLocalModelMatrix(node) {
+    const matrix = mat4.create();
+    for (const transform of node.getComponentsOfType(Transform)) {
+        mat4.mul(matrix, matrix, transform.matrix);
+    }
+    return matrix;
+}
+
+export function getGlobalModelMatrix(node) {
+    if (node.parent) {
+        const parentMatrix = getGlobalModelMatrix(node.parent);
+        const modelMatrix = getLocalModelMatrix(node);
+        return mat4.multiply(parentMatrix, parentMatrix, modelMatrix);
+    } else {
+        return getLocalModelMatrix(node);
+    }
+}
+
+export function getLocalViewMatrix(node) {
+    const matrix = getLocalModelMatrix(node);
+    return mat4.invert(matrix, matrix);
+}
+
+export function getGlobalViewMatrix(node) {
+    const matrix = getGlobalModelMatrix(node);
+    return mat4.invert(matrix, matrix);
+}
+
+export function getProjectionMatrix(node) {
+    return node.getComponentOfType(Camera)?.matrix ?? mat4.create();
+}
+```
+
+### Uporaba komponentnega sistema
+
+Zdaj lahko veliko funkcionalnosti naše aplikacije poenostavimo z uporabo
+komponentnega sistema. Najprej v datoteko `main.js` uvozimo vse potrebne razrede
+in funkcije:
+
+```js
+import { quat, mat4 } from './gl-matrix-module.js';
+import { Transform } from './Transform.js';
+import { Camera } from './Camera.js';
+import { Node } from './Node.js';
+import {
+    getGlobalModelMatrix,
+    getGlobalViewMatrix,
+    getProjectionMatrix,
+} from './SceneUtils.js';
+```
+
+Nato ustvarimo sceno:
+
+```js
+const model = new Node();
+model.addComponent(new Transform());
+
+const camera = new Node();
+camera.addComponent(new Camera());
+camera.addComponent(new Transform({
+    translation: [0, 0, 5]
+}));
+
+const scene = new Node();
+scene.addChild(model);
+scene.addChild(camera);
+```
+
+Posamezne transformacijske matrike lahko izbrišemo.
+
+V funkciji `render` poenostavimo pridobivanje transformacijskih matrik:
+
+```js
+const modelMatrix = getGlobalModelMatrix(model);
+const viewMatrix = getGlobalViewMatrix(camera);
+const projectionMatrix = getProjectionMatrix(camera);
+```
+
+V funkciji `update` lahko posodobimo vse komponente vseh objektov v sceni
+hkrati, tako da pokličemo njihove lastne funkcije `update`, če so na voljo:
+
+```js
+scene.traverse(node => {
+    for (const component of node.components) {
+        component.update?.();
+    }
+});
+```
+
+S tem lahko animacijo kocke izločimo iz glavne funkcije `update` in jo dodamo
+kot komponento:
+
+```js
+model.addComponent({
+    update() {
+        const time = performance.now() / 1000;
+        const transform = model.getComponentOfType(Transform);
+        const rotation = transform.rotation;
+
+        quat.identity(rotation);
+        quat.rotateX(rotation, rotation, time * 0.6);
+        quat.rotateY(rotation, rotation, time * 0.7);
+    }
+});
+```

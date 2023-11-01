@@ -1,4 +1,12 @@
-import { mat4 } from './gl-matrix-module.js';
+import { quat, mat4 } from './gl-matrix-module.js';
+import { Transform } from './Transform.js';
+import { Camera } from './Camera.js';
+import { Node } from './Node.js';
+import {
+    getGlobalModelMatrix,
+    getGlobalViewMatrix,
+    getProjectionMatrix,
+} from './SceneUtils.js';
 
 // Initialize WebGPU
 const adapter = await navigator.gpu.requestAdapter();
@@ -106,19 +114,46 @@ const bindGroup = device.createBindGroup({
     ]
 });
 
-// Create the transformation matrices
-const modelMatrix = mat4.create();
-const viewMatrix = mat4.fromTranslation(mat4.create(), [0, 0, -5]);
-const projectionMatrix = mat4.perspectiveZO(mat4.create(), 1, 1, 0.01, 1000);
+// Create the scene
+const model = new Node();
+model.addComponent(new Transform());
+model.addComponent({
+    update() {
+        const time = performance.now() / 1000;
+        const transform = model.getComponentOfType(Transform);
+        const rotation = transform.rotation;
 
+        quat.identity(rotation);
+        quat.rotateX(rotation, rotation, time * 0.6);
+        quat.rotateY(rotation, rotation, time * 0.7);
+    }
+});
+
+const camera = new Node();
+camera.addComponent(new Camera());
+camera.addComponent(new Transform({
+    translation: [0, 0, 5]
+}));
+
+const scene = new Node();
+scene.addChild(model);
+scene.addChild(camera);
+
+// Update all components
 function update() {
-    const time = performance.now() / 1000;
-    mat4.identity(modelMatrix);
-    mat4.rotateX(modelMatrix, modelMatrix, time * 0.6);
-    mat4.rotateY(modelMatrix, modelMatrix, time * 0.7);
+    scene.traverse(node => {
+        for (const component of node.components) {
+            component.update?.();
+        }
+    });
 }
 
 function render() {
+    // Get the required matrices
+    const modelMatrix = getGlobalModelMatrix(model);
+    const viewMatrix = getGlobalViewMatrix(camera);
+    const projectionMatrix = getProjectionMatrix(camera);
+
     // Upload the transformation matrix
     const matrix = mat4.create();
     mat4.multiply(matrix, modelMatrix, matrix);
