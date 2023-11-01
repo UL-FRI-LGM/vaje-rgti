@@ -349,7 +349,7 @@ Vrednosti uniform senčilnik pridobi iz medpomnilnika. Ustvarimo medpomnilnik, k
 naj bo vsaj tako velik, da lahko hrani dve števili s plavajočo vejico:
 
 ```js
-const translationBuffer = device.createBuffer({
+const uniformBuffer = device.createBuffer({
     size: 8,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
@@ -365,7 +365,7 @@ Za vezavo medpomnilnika v senčilnik moramo ustvariti še skupino vezav:
 const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
-        { binding: 0, resource: { buffer: translationBuffer } },
+        { binding: 0, resource: { buffer: uniformBuffer } },
     ]
 });
 ```
@@ -423,6 +423,44 @@ function update() {
     const x = radius * Math.cos(frequency * time * 2 * Math.PI);
     const y = radius * Math.sin(frequency * time * 2 * Math.PI);
 
-    device.queue.writeBuffer(translationBuffer, 0, new Float32Array([x, y]));
+    device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([x, y]));
 }
 ```
+
+### Transformacije z matrikami
+
+Transformacije lahko posplošimo z uporabo matrik. V računalniški grafiki se
+najpogosteje uporabljajo realne matrike velikosti 4x4, saj lahko z njimi
+predstavimo poljubne afine in celo perspektivne transformacije. Poleg tega lahko
+več transformacij združimo v eno samo matriko in s tem še pospešimo izračun.
+
+Najprej v senčilniku zamenjajmo spremenljivko `translation` tipa `vec2f` z
+matriko `matrix` tipa `mat4x4f`:
+
+
+```rust
+@group(0) @binding(0) var<uniform> matrix: mat4x4f;
+```
+
+Matriko pomnožimo s položajem oglišča:
+
+```rust
+output.position = matrix * vec4(input.position, 0, 1);
+```
+
+Zdaj lahko translacijo v funkciji `update` nadomestimo z matriko:
+
+```js
+device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    x, y, 0, 1,
+]);
+```
+
+Ne pozabimo še povečati velikosti medpomnilnika, ki mora biti zdaj velik vsaj
+64 bajtov.
+
+Matrike so na grafični kartici zapisane po stolpcih, zato matrika v zgornjem
+zapisu izgleda transponirana.

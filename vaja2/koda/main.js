@@ -72,9 +72,9 @@ const pipeline = device.createRenderPipeline({
     layout: 'auto',
 });
 
-// Create translation buffer
-const translationBuffer = device.createBuffer({
-    size: 8,
+// Create uniform buffer
+const uniformBuffer = device.createBuffer({
+    size: 4 * 4 * 4,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 
@@ -82,7 +82,7 @@ const translationBuffer = device.createBuffer({
 const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
-        { binding: 0, resource: { buffer: translationBuffer } },
+        { binding: 0, resource: { buffer: uniformBuffer } },
     ]
 });
 
@@ -94,7 +94,12 @@ function update() {
     const x = radius * Math.cos(frequency * time * 2 * Math.PI);
     const y = radius * Math.sin(frequency * time * 2 * Math.PI);
 
-    device.queue.writeBuffer(translationBuffer, 0, new Float32Array([x, y]));
+    device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        x, y, 0, 1,
+    ]));
 }
 
 function render() {
