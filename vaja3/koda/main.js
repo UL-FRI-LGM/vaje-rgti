@@ -101,7 +101,7 @@ const pipeline = device.createRenderPipeline({
 });
 
 // Create matrix buffer
-const matrixBuffer = device.createBuffer({
+const uniformBuffer = device.createBuffer({
     size: 16 * 4,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
@@ -110,7 +110,7 @@ const matrixBuffer = device.createBuffer({
 const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
-        { binding: 0, resource: { buffer: matrixBuffer } },
+        { binding: 0, resource: { buffer: uniformBuffer } },
     ]
 });
 
@@ -160,7 +160,7 @@ function render() {
     mat4.multiply(matrix, viewMatrix, matrix);
     mat4.multiply(matrix, projectionMatrix, matrix);
 
-    device.queue.writeBuffer(matrixBuffer, 0, matrix);
+    device.queue.writeBuffer(uniformBuffer, 0, matrix);
 
     // Render
     const commandEncoder = device.createCommandEncoder();
