@@ -186,10 +186,10 @@ v `Renderer.js`:
 
 ```js
 {
-    name: 'texcoords',
-    shaderLocation: 1,
-    offset: 12,
-    format: 'float32x2',
+    name: 'normal',
+    shaderLocation: 2,
+    offset: 20,
+    format: 'float32x3',
 },
 ```
 
