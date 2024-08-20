@@ -236,3 +236,14 @@ kartici z uporabo senčilnika. Skripta za samodejno generiranje piramide slik je
 na voljo na [tej povezavi](https://github.com/greggman/webgpu-utils/blob/dev/src/generate-mipmap.ts).
 Uporaba je v teh navodilih izpuščena, vsekakor pa je uporaba piramide slik močno
 priporočljiva.
+
+# Naloge
+
+1. Popravi podatke oglišč tako, da bo tekstura pravilno preslikana na vsako
+ploskev kocke.
+2. Napiši funkcijo, ki ustvari teksturo z naključnimi barvami. Ločljivost
+teksture naj bo podana kot argument funkcije.
+3. Program spremeni tako, da bo hkrati uporabljal tako teksture kot barve oglišč.
+V senčilniku fragmentov naj se barvi zmnožita.
+4. Program dopolni tako, da bo pri izrisu uporabljal dve teksturi. V senčilniku
+fragmentov barvi tekstur povpreči.
