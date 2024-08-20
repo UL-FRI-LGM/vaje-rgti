@@ -161,22 +161,22 @@ function update(time, dt) {
 # Osvetljevanje
 
 Upodabljalnik bomo razširili z Lambertovim osvetlitvenim modelom. Za osnovo bomo
-uporabili upodabljalnik `UnlitRenderer`, ki ga skopiramo v glavni korenski
-aplikacije v datoteko `Renderer.js` in nato razred preimenujemo v `Renderer`.
+uporabili upodabljalnik `UnlitRenderer`, ki ga skopiramo v korenski direktorij
+aplikacije v datoteko `MyRenderer.js` in nato razred preimenujemo v `MyRenderer`.
 Potrebujemo tudi senčilnik, ki ga skopiramo iz `UnlitRenderer.wgsl`
-v korenski direktorij po imenom `shader.wgsl`. Popravimo poti uvozov in pri tem
-popravimo še URL, ki ga `Renderer` uporablja za dostop do senčilnika.
+v korenski direktorij po imenom `MyRenderer.wgsl`. Popravimo poti uvozov in pri
+tem popravimo še URL, ki ga `MyRenderer` uporablja za dostop do senčilnika.
 
 V datoteki `main.js` uvozimo nov upodabljalnik:
 
 ```js
-import { Renderer } from './Renderer.js';
+import { MyRenderer } from './MyRenderer.js';
 ```
 
 Nato ga instanciramo namesto `UnlitRenderer`:
 
 ```js
-const renderer = new Renderer(canvas);
+const renderer = new MyRenderer(canvas);
 ```
 
 Zdaj lahko upodabljalnik spreminjamo in dopolnjujemo. Najprej bomo dodali
@@ -184,7 +184,7 @@ osvetljevanje po Lambertovem modelu s konstantno smerjo svetlobe. Lambertov
 model površino osvetli sorazmerno s kosinusom vpadnega kota svetlobe. Kosinus
 vpadnega kota lahko enostavno izračunamo s skalarnim produktom, če imamo dostop
 do normale površine. Normalo dodamo kot atribut oglišč v razporedu, določenem
-v `Renderer.js`:
+v `MyRenderer.js`:
 
 ```js
 {
@@ -459,3 +459,16 @@ light.addComponent(new LinearAnimator(light, {
 ```
 
 Vidimo, da se položaj luči spreminja in da se gibanje odraža tudi pri izrisu.
+
+# Naloge
+
+1. Program dopolni tako, da bo luč imela tudi barvo.
+2. Lambertov osvetlitveni model dopolni s Phongovim modelom za upodabljanje
+zrcalnih odbojev svetlobe. Poleg položaja luči bo senčilnik potreboval še
+položaj kamere. Za zrcalni odboj svetlobe si lahko pomagaš s funkcijo `reflect`.
+3. Točkasto luč spremeni v reflektorsko, tako da ji dodaš zorni kot. Smer luči
+je določena z njeno lokalno transformacijo. Senčilnik fragmentov naj glede na
+zorni kot luči preveri, ali je fragment osvetljen ali ne.
+4. Senčilnik posodobi tako, da bo sprejemal 4 luči (uporabi `array`).
+Upodabljalnik naj v grafu scene poišče 4 luči oz. uniforme manjkajočih luči
+nastavi tako, da ne vplivajo na osvetlitev.
