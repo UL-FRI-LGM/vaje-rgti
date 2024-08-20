@@ -45,10 +45,11 @@ V direktoriju `koda` odpremo terminal in poženemo ukaz
 python -m http.server 3000
 ```
 
-Ukaz bo pognal HTTP strežnik na lokalnem naslovu (`localhost`) na vratih 3000.
-Zdaj lahko spletni brskalnik usmerimo na naslov `localhost:3000` in prikaže se
-spletna stran z napisom **Vaje 1**. Odprimo še razvojno orodje (bližnjica v
-Chromiumu je F12), kjer bi morali videti konzolo brez napak.
+Ukaz bo pognal HTTP strežnik na lokalnem naslovu (`localhost`) na vratih 3000,
+kamor bo stregel vsebino direktorija, v katerem je bil ukaz pognan. Zdaj lahko
+spletni brskalnik usmerimo na naslov `localhost:3000` in prikaže se spletna
+stran z napisom **Vaja 1**. Odprimo še razvojno orodje (bližnjica v Chromiumu je
+F12), kjer bi morali videti konzolo brez napak.
 
 # Inicializacija vmesnika
 
@@ -80,7 +81,7 @@ const device = await adapter.requestDevice();
 Naprava je zadolžena za ustvarjanje in upravljanje z resursi. Pri izbiri naprave
 lahko zahtevamo uporabo razširitev ali višjih numeričnih limitov, toda s tem
 zmanjšamo nabor naprav, na katerih bo naša aplikacija delovala (v prvi vrsti
-mobilne naprave).
+odpadejo mobilne naprave).
 
 Tudi izbira naprave je lahko časovno potratna operacija, zato je asinhrona.
 
@@ -155,7 +156,7 @@ Za izris trikotnika potrebujemo dva programa: prvi, **senčilnik oglišč**, dol
 položaj oglišč trikotnika na platnu, drugi, **senčilnik fragmentov**, pa določi
 barvo pikslov (natančneje fragmentov). V kakšni obliki podatki o ogliščih pridejo
 v obdelavo v senčilnik oglišč in v kakšni obliki so zapisane barve na izhodu
-senčilnika fragmentov določa **cevovod**. Cevovod torej oba senčilnika poveže v
+senčilnika fragmentov, določa **cevovod**. Cevovod torej oba senčilnika poveže v
 skupno celoto in določi format podatkov na vhodu in izhodu. Zaradi učinkovitosti
 je pomembno, da te informacije grafični kartici podamo vnaprej.
 
@@ -239,7 +240,7 @@ const pipeline = device.createRenderPipeline({
 
 V zgornjem primeru določimo senčilniški modul in ime vstopne funkcije za oba
 senčilnika. Pri senčnilniku fragmentov moramo določiti tudi format izhodnih slik.
-Indeks 0 v direktivi `@location(0)` se nanaša na ta seznam. Zadnji podatek pri
+Indeks 0 v dekoratorju `@location(0)` se nanaša na ta seznam. Zadnji podatek pri
 ustvarjanju cevovoda je razpored cevovoda (pipeline layout), ki ga bomo
 obravnavali na kasnejših vajah. Do nadaljnjega bomo ustvarjanje razporeda
 cevovoda prepustili gonilniku, ki razpored izlušči iz same kode senčilnikov,
