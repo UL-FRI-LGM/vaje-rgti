@@ -375,4 +375,4 @@ vrednosti x in y dosežejo tako stanje?
 kvadrat prikazan na platnu?
 4. Spreminjaj koordinato w. Kaj se dogaja s kvadratom in zakaj?
 5. Z rotacijsko matriko zavrti kvadrat za kot 20 stopinj. Pomagaj si s funkcijami
-mat4 (ali mat4f), cos in sin.
+mat4x4 (oz. mat4x4f), cos in sin.
