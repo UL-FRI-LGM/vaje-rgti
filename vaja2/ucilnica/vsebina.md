@@ -137,12 +137,10 @@ Zgornja opisa medpomnilnikov napravi podamo ob ustvarjanju cevovoda:
 const pipeline = device.createRenderPipeline({
     vertex: {
         module,
-        entryPoint: 'vertex',
         buffers: [positionBufferLayout, colorBufferLayout],
     },
     fragment: {
         module,
-        entryPoint: 'fragment',
         targets: [{ format }],
     },
     layout: 'auto',
