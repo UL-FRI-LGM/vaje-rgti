@@ -260,7 +260,7 @@ renderPass.draw(6);
 
 Le s tema dvema popravkoma bi morala koda izrisati kvadrat.
 
-Podvojevanju oglišč se lahko izognemo tako, da najprej vsako oglišče v
+Podvajanju oglišč se lahko izognemo tako, da najprej vsako oglišče v
 medpomnilniku oglišč definiramo le enkrat:
 
 ```js
