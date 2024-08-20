@@ -366,3 +366,15 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
 
 Tako posodobljena koda bi morala brez sprememb v datoteki `main.js` izrisati
 trikotnik, v katerem se barve gladko prelivajo med rdečo, zeleno in modro.
+
+# Naloge
+
+1. Podatke o ogliščih spremeni in dopolni, tako da program izriše kvadrat. Po
+potrebi posodobi tudi obhod upodabljanja.
+2. Spremeni koordinate oglišč, tako da se bo kvadrat dotikal robov platna. Katere
+vrednosti x in y dosežejo tako stanje?
+3. Spreminjaj koordinato z, dokler kvadrat ne izgine. Pri katerih vrednostih je
+kvadrat prikazan na platnu?
+4. Spreminjaj koordinato w. Kaj se dogaja s kvadratom in zakaj?
+5. Z rotacijsko matriko zavrti kvadrat za kot 20 stopinj. Pomagaj si s funkcijami
+mat4 (ali mat4f), cos in sin.
