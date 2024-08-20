@@ -462,3 +462,15 @@ Ne pozabimo še povečati velikosti medpomnilnika, ki mora biti zdaj velik vsaj
 
 Matrike so na grafični kartici zapisane po stolpcih, zato matrika v zgornjem
 zapisu izgleda transponirana.
+
+# Naloge
+
+1. Napiši funkcijo, ki ustvari model kroga. Model naj bo indeksiran in sestavljen
+iz trikotnikov, ki se stikajo v središču kroga. Število oglišč na obodu kroga naj
+bo podano kot parameter funkcije. Barva vseh oglišč je lahko enaka.
+2. Napiši funkcijo, ki ustvari regularno mrežo. Ločljivost mreže v smeri x in y
+naj bo podana s parametroma funkcije. Model naj bo indeksiran. Koliko grafičnega
+pomnilnika porabi indeksiran model? Kaj pa neindeksiran?
+3. Kodo posodobi tako, da bo izrisala vse modele, podane s seznamom. Vsak model
+naj ima svoj medpomnilnik oglišč, medpomnilnik indeksov, medpomnilnik uniform in
+skupino vezave.
