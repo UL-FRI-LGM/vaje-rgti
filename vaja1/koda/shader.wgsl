@@ -1,13 +1,13 @@
-const positions = array<vec2f, 3>(
-    vec2(-0.5, -0.5),
-    vec2( 0.5, -0.5),
-    vec2( 0.0,  0.5),
+const positions = array(
+    vec2f(-0.5, -0.5),
+    vec2f( 0.5, -0.5),
+    vec2f( 0.0,  0.5),
 );
 
-const colors = array<vec4f, 3>(
-    vec4(1, 0, 0, 1),
-    vec4(0, 1, 0, 1),
-    vec4(0, 0, 1, 1),
+const colors = array(
+    vec4f(1, 0, 0, 1),
+    vec4f(0, 1, 0, 1),
+    vec4f(0, 0, 1, 1),
 );
 
 struct VertexInput {
@@ -31,7 +31,7 @@ struct FragmentOutput {
 fn vertex(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
 
-    output.position = vec4(positions[input.vertexIndex], 0, 1);
+    output.position = vec4f(positions[input.vertexIndex], 0, 1);
     output.color = colors[input.vertexIndex];
 
     return output;

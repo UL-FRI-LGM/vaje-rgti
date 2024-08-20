@@ -169,11 +169,11 @@ Ustvarimo dve funkciji, `vertex` in `fragment`:
 
 ```rust
 fn vertex() -> vec4f {
-    return vec4(0, 0, 0, 1);
+    return vec4f(0, 0, 0, 1);
 }
 
 fn fragment() -> vec4f {
-    return vec4(1, 0, 0, 1);
+    return vec4f(1, 0, 0, 1);
 }
 ```
 
@@ -191,12 +191,12 @@ Z dodanimi dekoratorji bo koda senčilnikov izgledala tako:
 ```rust
 @vertex
 fn vertex() -> @builtin(position) vec4f {
-    return vec4(0, 0, 0, 1);
+    return vec4f(0, 0, 0, 1);
 }
 
 @fragment
 fn fragment() -> @location(0) vec4f {
-    return vec4(1, 0, 0, 1);
+    return vec4f(1, 0, 0, 1);
 }
 ```
 
@@ -227,19 +227,17 @@ bomo uporabljali le grafičnega.
 const pipeline = device.createRenderPipeline({
     vertex: {
         module,
-        entryPoint: 'vertex',
     },
     fragment: {
         module,
-        entryPoint: 'fragment',
         targets: [{ format }],
     },
     layout: 'auto',
 });
 ```
 
-V zgornjem primeru določimo senčilniški modul in ime vstopne funkcije za oba
-senčilnika. Pri senčnilniku fragmentov moramo določiti tudi format izhodnih slik.
+V zgornjem primeru določimo senčilniški modul za obe stopnji cevovoda. Pri
+senčnilniku fragmentov moramo določiti tudi format izhodnih slik.
 Indeks 0 v dekoratorju `@location(0)` se nanaša na ta seznam. Zadnji podatek pri
 ustvarjanju cevovoda je razpored cevovoda (pipeline layout), ki ga bomo
 obravnavali na kasnejših vajah. Do nadaljnjega bomo ustvarjanje razporeda
@@ -270,7 +268,7 @@ parameter funkcije `vertex`:
 @vertex
 fn vertex(@builtin(vertex_index) vertexIndex) -> @builtin(position) vec4f {
     if (vertexIndex == 0) {
-        return vec4(0, 0, 0, 1);
+        return vec4f(0, 0, 0, 1);
     } else if ( ... ) {
         ...
     }
@@ -280,15 +278,15 @@ fn vertex(@builtin(vertex_index) vertexIndex) -> @builtin(position) vec4f {
 Kodo lahko še malenkost poenostavimo z uporabo seznamov:
 
 ```rust
-const positions = array<vec2f, 3>(
-    vec2(-0.5, -0.5),
-    vec2( 0.5, -0.5),
-    vec2( 0.0,  0.5),
+const positions = array(
+    vec2f(-0.5, -0.5),
+    vec2f( 0.5, -0.5),
+    vec2f( 0.0,  0.5),
 );
 
 @vertex
 fn vertex(@builtin(vertex_index) vertexIndex) -> @builtin(position) vec4f {
-    return vec4(positions[vertexIndex], 0, 1);
+    return vec4f(positions[vertexIndex], 0, 1);
 }
 ```
 
@@ -301,10 +299,10 @@ notranjosti trikotnika pa bi se barve prelivale. Barve lahko ogliščem določim
 na podoben način kot položaje:
 
 ```rust
-const colors = array<vec4f, 3>(
-    vec4(1, 0, 0, 1),
-    vec4(0, 1, 0, 1),
-    vec4(0, 0, 1, 1),
+const colors = array(
+    vec4f(1, 0, 0, 1),
+    vec4f(0, 1, 0, 1),
+    vec4f(0, 0, 1, 1),
 );
 ```
 
@@ -348,7 +346,7 @@ Posodobimo še senčilnika, da bosta uporabljala zgornje strukture:
 fn vertex(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
 
-    output.position = vec4(positions[input.vertexIndex], 0, 1);
+    output.position = vec4f(positions[input.vertexIndex], 0, 1);
     output.color = colors[input.vertexIndex];
 
     return output;
