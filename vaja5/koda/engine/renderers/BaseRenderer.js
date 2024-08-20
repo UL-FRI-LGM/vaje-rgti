@@ -1,8 +1,8 @@
-import { mat4 } from '../../../lib/gl-matrix-module.js';
+import { mat4 } from 'glm';
 
-import * as WebGPU from '../../../common/engine/WebGPU.js';
+import * as WebGPU from '../WebGPU.js';
 
-import { createVertexBuffer } from '../../../common/engine/core/VertexUtils.js';
+import { createVertexBuffer } from '../core/VertexUtils.js';
 
 export class BaseRenderer {
 
@@ -23,21 +23,15 @@ export class BaseRenderer {
         this.format = format;
     }
 
-    mat3tomat4(matrix) {
-        return mat4.fromValues(
-            matrix[0], matrix[1], matrix[2], 0,
-            matrix[3], matrix[4], matrix[5], 0,
-            matrix[6], matrix[7], matrix[8], 0,
-            0, 0, 0, 1,
-        );
-    }
-
-    prepareImage(image) {
+    prepareImage(image, isSRGB = false) {
         if (this.gpuObjects.has(image)) {
             return this.gpuObjects.get(image);
         }
 
-        const gpuTexture = WebGPU.createTexture(this.device, { source: image });
+        const gpuTexture = WebGPU.createTexture(this.device, {
+            source: image,
+            format: isSRGB ? 'rgba8unorm-srgb' : 'rgba8unorm',
+        });
 
         const gpuObjects = { gpuTexture };
         this.gpuObjects.set(image, gpuObjects);

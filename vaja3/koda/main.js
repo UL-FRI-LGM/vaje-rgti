@@ -1,4 +1,4 @@
-import { quat, mat4 } from './gl-matrix-module.js';
+import { quat, mat4 } from './glm.js';
 import { Transform } from './Transform.js';
 import { Camera } from './Camera.js';
 import { Node } from './Node.js';
@@ -153,10 +153,10 @@ function render() {
     const projectionMatrix = getProjectionMatrix(camera);
 
     // Upload the transformation matrix
-    const matrix = mat4.create();
-    mat4.multiply(matrix, modelMatrix, matrix);
-    mat4.multiply(matrix, viewMatrix, matrix);
-    mat4.multiply(matrix, projectionMatrix, matrix);
+    const matrix = mat4.create()
+        .multiply(projectionMatrix)
+        .multiply(viewMatrix)
+        .multiply(modelMatrix);
 
     device.queue.writeBuffer(uniformBuffer, 0, matrix);
 

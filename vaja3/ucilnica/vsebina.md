@@ -83,29 +83,12 @@ funkcij za delo z matrikami in vektorji je dobra vaja za programiranje, mi pa
 bomo uporabili kar obstoječo knjižnico `glMatrix`, ki je optimizirana za čim
 hitrejše izvajanje.
 
-Knjižnico dobimo na naslovu <https://github.com/toji/gl-matrix/blob/master/dist/gl-matrix-min.js>.
-Gre za minificirano različico v formatu CommonJS, zato jo bomo, za izogib delu
-s prevajalniki, v aplikacijo dodali v dveh korakih.
+Knjižnico dobimo na naslovu <https://raw.githubusercontent.com/UL-FRI-LGM/webgpu-examples/master/lib/glm.js>.
 
-Knjižnico bomo najprej vključili kot navadno skripto v glavo `index.html` *pred*
-skripto `main.js`:
-
-```html
-<script src="gl-matrix-min.js"></script>
-```
-
-Če želimo skripto uporabljati kot modul, moramo ustvariti še datoteko
-`gl-matrix-module.js`, ki globalno spremenljivko `glMatrix` izvozi v primerno
-obliko:
+V skripto `main.js` uvozimo kodo za delo s 4x4 matrikami:
 
 ```js
-export const { mat2, mat2d, mat3, mat4, quat, quat2, vec2, vec3, vec4 } = glMatrix;
-```
-
-Zdaj lahko v skripto `main.js` uvozimo kodo za delo s 4x4 matrikami:
-
-```js
-import { mat4 } from './gl-matrix-module.js';
+import { mat4 } from './glm.js';
 ```
 
 ### Postavitev scene
@@ -150,9 +133,7 @@ Kocko animiramo v funkciji `update`:
 
 ```js
 const time = performance.now() / 1000;
-mat4.identity(modelMatrix);
-mat4.rotateX(modelMatrix, modelMatrix, time * 0.6);
-mat4.rotateY(modelMatrix, modelMatrix, time * 0.7);
+modelMatrix.identity().rotateX(time * 0.6).rotateY(time * 0.7);
 ```
 
 Zgornja koda matriko modela najprej ponastavi, sicer bi se ohranjala skozi
@@ -165,10 +146,10 @@ modela, pogleda in projekcije. V funkciji `render` jih zmnožimo in pri tem
 pazimo na vrstni red množenja:
 
 ```js
-const matrix = mat4.create();
-mat4.multiply(matrix, modelMatrix, matrix);
-mat4.multiply(matrix, viewMatrix, matrix);
-mat4.multiply(matrix, projectionMatrix, matrix);
+const matrix = mat4.create()
+    .multiply(projectionMatrix)
+    .multiply(viewMatrix)
+    .multiply(modelMatrix);
 ```
 
 Rezultat zapišemo v medpomnilnik:
@@ -232,7 +213,7 @@ posamezno vozlišče v grafu scene in vseboval seznam pripetih komponent.
 Začnimo z razredom `Transform`, ki ga zapišimo v datoteko `Transform.js`:
 
 ```js
-import { mat4 } from './gl-matrix-module.js';
+import { mat4 } from './glm.js';
 
 export class Transform {
 
@@ -262,7 +243,7 @@ Dodajmo še razred `Camera` za predstavitev perspektivne kamere in ga zapišimo
 v datoteko `Camera.js`:
 
 ```js
-import { mat4 } from './gl-matrix-module.js';
+import { mat4 } from './glm.js';
 
 export class Camera {
 
@@ -389,7 +370,7 @@ transformacijskih matrik. Za enostavnejše delo s transformacijami ustvarimo še
 datoteko `SceneUtils.js`, kamor bomo zapisali funkcije za združevanje matrik:
 
 ```js
-import { mat4 } from './gl-matrix-module.js';
+import { mat4 } from './glm.js';
 
 import { Transform } from './Transform.js';
 import { Camera } from './Camera.js';
@@ -397,7 +378,7 @@ import { Camera } from './Camera.js';
 export function getLocalModelMatrix(node) {
     const matrix = mat4.create();
     for (const transform of node.getComponentsOfType(Transform)) {
-        mat4.mul(matrix, matrix, transform.matrix);
+        matrix.multiply(transform.matrix);
     }
     return matrix;
 }
@@ -406,20 +387,18 @@ export function getGlobalModelMatrix(node) {
     if (node.parent) {
         const parentMatrix = getGlobalModelMatrix(node.parent);
         const modelMatrix = getLocalModelMatrix(node);
-        return mat4.multiply(parentMatrix, parentMatrix, modelMatrix);
+        return parentMatrix.multiply(modelMatrix);
     } else {
         return getLocalModelMatrix(node);
     }
 }
 
 export function getLocalViewMatrix(node) {
-    const matrix = getLocalModelMatrix(node);
-    return mat4.invert(matrix, matrix);
+    return getLocalModelMatrix(node).invert();
 }
 
 export function getGlobalViewMatrix(node) {
-    const matrix = getGlobalModelMatrix(node);
-    return mat4.invert(matrix, matrix);
+    return getGlobalModelMatrix(node).invert();
 }
 
 export function getProjectionMatrix(node) {
@@ -434,7 +413,7 @@ komponentnega sistema. Najprej v datoteko `main.js` uvozimo vse potrebne razrede
 in funkcije:
 
 ```js
-import { quat, mat4 } from './gl-matrix-module.js';
+import { quat, mat4 } from './glm.js';
 import { Transform } from './Transform.js';
 import { Camera } from './Camera.js';
 import { Node } from './Node.js';

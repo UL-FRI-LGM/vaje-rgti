@@ -3,12 +3,20 @@
 <head>
     <meta charset="utf-8">
     <title>Vaja 5</title>
-    <link rel="stylesheet" href="common/style.css">
-    <script src="lib/gl-matrix-min.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "engine/": "./engine/",
+            "dat": "./lib/dat.js",
+            "glm": "./lib/glm.js"
+        }
+    }
+    </script>
+    <link rel="stylesheet" href="engine/style.css">
     <script type="module" src="main.js"></script>
 </head>
 <body>
-    <div class="fullscreen">
+    <div class="fullscreen no-touch pixelated">
         <canvas></canvas>
     </div>
 </body>

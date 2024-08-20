@@ -176,6 +176,8 @@ export class GLTFLoader {
         }
         if (gltfSpec.sampler !== undefined) {
             options.sampler = this.loadSampler(gltfSpec.sampler);
+        } else {
+            options.sampler = new Sampler();
         }
 
         const texture = new Texture(options);
@@ -198,6 +200,7 @@ export class GLTFLoader {
         if (pbr) {
             if (pbr.baseColorTexture) {
                 options.baseTexture = this.loadTexture(pbr.baseColorTexture.index);
+                options.baseTexture.isSRGB = true;
             }
             if (pbr.metallicRoughnessTexture) {
                 options.metalnessTexture = this.loadTexture(pbr.metallicRoughnessTexture.index);
@@ -215,6 +218,7 @@ export class GLTFLoader {
 
         if (gltfSpec.emissiveTexture) {
             options.emissionTexture = this.loadTexture(gltfSpec.emissiveTexture.index);
+            options.emissionTexture.isSRGB = true;
             options.emissionFactor = gltfSpec.emissiveFactor;
         }
 

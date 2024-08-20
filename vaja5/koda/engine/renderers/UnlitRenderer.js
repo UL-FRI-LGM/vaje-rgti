@@ -1,4 +1,4 @@
-import { mat3, mat4 } from '../../../lib/gl-matrix-module.js';
+import { mat4 } from 'glm';
 
 import * as WebGPU from '../WebGPU.js';
 
@@ -40,7 +40,7 @@ export class UnlitRenderer extends BaseRenderer {
     async initialize() {
         await super.initialize();
 
-        const code = await fetch(new URL('../shaders/unlit.wgsl', import.meta.url))
+        const code = await fetch(new URL('UnlitRenderer.wgsl', import.meta.url))
             .then(response => response.text());
         const module = this.device.createShaderModule({ code });
 
@@ -48,10 +48,12 @@ export class UnlitRenderer extends BaseRenderer {
             layout: 'auto',
             vertex: {
                 module,
+                entryPoint: 'vertex',
                 buffers: [ vertexBufferLayout ],
             },
             fragment: {
                 module,
+                entryPoint: 'fragment',
                 targets: [{ format: this.format }],
             },
             depthStencil: {
@@ -117,13 +119,25 @@ export class UnlitRenderer extends BaseRenderer {
         return gpuObjects;
     }
 
+    prepareTexture(texture) {
+        if (this.gpuObjects.has(texture)) {
+            return this.gpuObjects.get(texture);
+        }
+
+        const { gpuTexture } = this.prepareImage(texture.image); // ignore sRGB
+        const { gpuSampler } = this.prepareSampler(texture.sampler);
+
+        const gpuObjects = { gpuTexture, gpuSampler };
+        this.gpuObjects.set(texture, gpuObjects);
+        return gpuObjects;
+    }
+
     prepareMaterial(material) {
         if (this.gpuObjects.has(material)) {
             return this.gpuObjects.get(material);
         }
 
-        const baseTexture = this.prepareImage(material.baseTexture.image).gpuTexture;
-        const baseSampler = this.prepareSampler(material.baseTexture.sampler).gpuSampler;
+        const baseTexture = this.prepareTexture(material.baseTexture);
 
         const materialUniformBuffer = this.device.createBuffer({
             size: 16,
@@ -134,8 +148,8 @@ export class UnlitRenderer extends BaseRenderer {
             layout: this.pipeline.getBindGroupLayout(2),
             entries: [
                 { binding: 0, resource: { buffer: materialUniformBuffer } },
-                { binding: 1, resource: baseTexture.createView() },
-                { binding: 2, resource: baseSampler },
+                { binding: 1, resource: baseTexture.gpuTexture.createView() },
+                { binding: 2, resource: baseTexture.gpuSampler },
             ],
         });
 
@@ -187,7 +201,7 @@ export class UnlitRenderer extends BaseRenderer {
         modelMatrix = mat4.multiply(mat4.create(), modelMatrix, localMatrix);
 
         const { modelUniformBuffer, modelBindGroup } = this.prepareNode(node);
-        const normalMatrix = this.mat3tomat4(mat3.normalFromMat4(mat3.create(), modelMatrix));
+        const normalMatrix = mat4.normalFromMat4(mat4.create(), modelMatrix);
         this.device.queue.writeBuffer(modelUniformBuffer, 0, modelMatrix);
         this.device.queue.writeBuffer(modelUniformBuffer, 64, normalMatrix);
         this.renderPass.setBindGroup(1, modelBindGroup);

@@ -1,4 +1,4 @@
-import { mat4 } from './gl-matrix-module.js';
+import { mat4 } from './glm.js';
 
 import { Transform } from './Transform.js';
 import { Camera } from './Camera.js';
@@ -6,7 +6,7 @@ import { Camera } from './Camera.js';
 export function getLocalModelMatrix(node) {
     const matrix = mat4.create();
     for (const transform of node.getComponentsOfType(Transform)) {
-        mat4.mul(matrix, matrix, transform.matrix);
+        matrix.multiply(transform.matrix);
     }
     return matrix;
 }
@@ -15,20 +15,18 @@ export function getGlobalModelMatrix(node) {
     if (node.parent) {
         const parentMatrix = getGlobalModelMatrix(node.parent);
         const modelMatrix = getLocalModelMatrix(node);
-        return mat4.multiply(parentMatrix, parentMatrix, modelMatrix);
+        return parentMatrix.multiply(modelMatrix);
     } else {
         return getLocalModelMatrix(node);
     }
 }
 
 export function getLocalViewMatrix(node) {
-    const matrix = getLocalModelMatrix(node);
-    return mat4.invert(matrix, matrix);
+    return getLocalModelMatrix(node).invert();
 }
 
 export function getGlobalViewMatrix(node) {
-    const matrix = getGlobalModelMatrix(node);
-    return mat4.invert(matrix, matrix);
+    return getGlobalModelMatrix(node).invert();
 }
 
 export function getProjectionMatrix(node) {

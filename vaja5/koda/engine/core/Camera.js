@@ -1,4 +1,4 @@
-import { mat4 } from '../../../lib/gl-matrix-module.js';
+import { mat4 } from 'glm';
 
 export class Camera {
 
@@ -7,8 +7,8 @@ export class Camera {
         aspect = 1,
         fovy = 1,
         halfy = 1,
-        near = 1,
-        far = 100,
+        near = 0.01,
+        far = 1000,
     } = {}) {
         this.orthographic = orthographic;
         this.aspect = aspect;

@@ -3,10 +3,9 @@
 Za lažji razvoj bomo v tej vaji uporabili ogrodje iz repozitorija
 [webgpu-examples](https://github.com/UL-FRI-LGM/webgpu-examples).
 Aplikacijo bomo napisali od začetka, zato datotek s prejšnjih vaj ne
-potrebujemo. Ogrodje je na voljo v direktoriju `common/engine`, ki ga skopiramo
-v svojo aplikacijo, prav tako v direktorij `common`. V isti direktorij skopiramo
-še datoteko `common/style.css`. Skopiramo tudi direktorij `lib`, ki vsebuje
-knjižnice.
+potrebujemo. Ogrodje je na voljo v direktoriju `engine`, ki ga skopiramo
+v svojo aplikacijo, prav tako direktorij `models`. Skopiramo tudi direktorij
+`lib`, ki vsebuje knjižnice.
 
 ### Priprava aplikacije
 
@@ -18,33 +17,41 @@ Zdaj ustvarimo glavni datoteki aplikacije. Najprej `index.html`:
 <head>
     <meta charset="utf-8">
     <title>Vaja 5</title>
-    <link rel="stylesheet" href="common/style.css">
-    <script src="lib/gl-matrix-min.js"></script>
+    {
+        "imports": {
+            "engine/": "./engine/",
+            "dat": "./lib/dat.js",
+            "glm": "./lib/glm.js"
+        }
+    }
+    </script>
+    <link rel="stylesheet" href="engine/style.css">
     <script type="module" src="main.js"></script>
 </head>
 <body>
-    <div class="fullscreen">
+    <div class="fullscreen no-touch pixelated">
         <canvas></canvas>
     </div>
 </body>
 </html>
 ```
 
-Tako zgrajen HTML bo poskrbel tudi za razteg platna čez celoten zaslon.
+Tako zgrajen HTML bo poskrbel tudi za razteg platna čez celoten zaslon in za
+pravilno uvažanje modulov.
 
 Nato ustvarimo še `main.js`, kjer postavimo osnovno ogrodje aplikacije in
 uvozimo vse potrebne razrede:
 
 ```js
-import { ResizeSystem } from './common/engine/systems/ResizeSystem.js';
-import { UpdateSystem } from './common/engine/systems/UpdateSystem.js';
+import { ResizeSystem } from 'engine/systems/ResizeSystem.js';
+import { UpdateSystem } from 'engine/systems/UpdateSystem.js';
 
 import {
     Camera,
     Model,
     Node,
     Transform,
-} from './common/engine/core.js';
+} from 'engine/core.js';
 
 const canvas = document.querySelector('canvas');
 
@@ -58,25 +65,20 @@ new UpdateSystem({ update, render }).start();
 
 ### Branje scene iz datoteke
 
-Iz repozitorija v direktorij `common/models` skopirajmo sledeče datoteke, ki
-opisujejo enostavno 3D sceno:
-* `common/models/monkey.gltf`
-* `common/models/monkey.bin`
-* `common/models/base.png`
-
+Prebrali bomo sceno iz datoteke `./models/monkey/monkey.gltf`.
 Scena je opisana v formatu glTF, ki vsebuje vse informacije o grafu scene,
 materialih, teksturah in modelih. V aplikaciji jo lahko preberemo z uporabo
 razreda `GLTFLoader`, ki ga najprej vključimo v aplikacijo:
 
 ```js
-import { GLTFLoader } from './common/engine/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'engine/loaders/GLTFLoader.js';
 ```
 
 Nato preberemo privzeto sceno in v njej najdemo kamero:
 
 ```js
 const gltfLoader = new GLTFLoader();
-await gltfLoader.load('common/models/monkey.gltf');
+await gltfLoader.load('./models/monkey/monkey.gltf');
 
 const scene = gltfLoader.loadScene(gltfLoader.defaultScene);
 const camera = scene.find(node => node.getComponentOfType(Camera));
@@ -97,7 +99,7 @@ Sceno lahko izrišemo z uporabo upodabljalnika `UnlitRenderer`. Najprej ga
 vključimo v aplikacijo:
 
 ```js
-import { UnlitRenderer } from './common/engine/renderers/UnlitRenderer.js';
+import { UnlitRenderer } from 'engine/renderers/UnlitRenderer.js';
 ```
 
 Nato ustvarimo upodabljalnik in ga inicializiramo:
@@ -124,8 +126,8 @@ Kot zanimivost dodajmo še interakcijo s kamero ter animacijo modela. Za prvo
 bomo uporabili `OrbitController`, za slednjo pa `RotateAnimator`:
 
 ```js
-import { OrbitController } from './common/engine/controllers/OrbitController.js';
-import { RotateAnimator } from './common/engine/animators/RotateAnimator.js';
+import { OrbitController } from 'engine/controllers/OrbitController.js';
+import { RotateAnimator } from 'engine/animators/RotateAnimator.js';
 ```
 
 Razreda instanciramo in objekta pripnemo kot komponenti ustreznim vozliščem:
@@ -161,7 +163,7 @@ function update(time, dt) {
 Upodabljalnik bomo razširili z Lambertovim osvetlitvenim modelom. Za osnovo bomo
 uporabili upodabljalnik `UnlitRenderer`, ki ga skopiramo v glavni korenski
 aplikacije v datoteko `Renderer.js` in nato razred preimenujemo v `Renderer`.
-Potrebujemo tudi senčilnik, ki ga skopiramo iz `common/engine/shaders/unlit.wgsl`
+Potrebujemo tudi senčilnik, ki ga skopiramo iz `UnlitRenderer.wgsl`
 v korenski direktorij po imenom `shader.wgsl`. Popravimo poti uvozov in pri tem
 popravimo še URL, ki ga `Renderer` uporablja za dostop do senčilnika.
 
@@ -442,7 +444,7 @@ vsebuje komponento `Transform`. Dodamo ji lahko denimo linearno gibanje preko
 komponente `LinearAnimator`. Najprej jo uvozimo:
 
 ```js
-import { LinearAnimator } from './common/engine/animators/LinearAnimator.js';
+import { LinearAnimator } from 'engine/animators/LinearAnimator.js';
 ```
 
 Nato komponento dodamo luči:
