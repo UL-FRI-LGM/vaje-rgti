@@ -478,3 +478,12 @@ model.addComponent({
     }
 });
 ```
+
+# Naloge
+
+1. Napiši komponento, ki objekt zvezno premika med dvema točkama v prostoru.
+2. Napiši komponento `Model`, ki naj v konstruktorju prejme seznam oglišč in
+seznam indeksov. Program naj se pred izrisom sprehodi po grafu scene in prenese
+podatke modelov na grafično kartico. Za vsak model ustvari medpomnilnik
+uniform za hranjenje transformacije ter pripadajočo skupino vezav. Tako
+pripravljene podatke uporabi pri izrisu grafa scene.
